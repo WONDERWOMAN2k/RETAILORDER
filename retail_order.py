@@ -22,9 +22,12 @@ install_packages()
 from google.colab import files
 files.upload()
 
-!mkdir -p ~/.kaggle
-!mv kaggle.json ~/.kaggle/
-!chmod 600 ~/.kaggle/kaggle.json
+import os
+
+# Create the .kaggle directory if it doesn't exist
+kaggle_dir = os.path.expanduser("~/.kaggle")
+os.makedirs(kaggle_dir, exist_ok=True)
+
 
 import os
 
