@@ -1,3 +1,7 @@
+
+!pip install streamlit mysql-connector-python pandas matplotlib seaborn numpy
+!pip freeze > requirements.txt
+
 import streamlit as st
 import os
 import pandas as pd
