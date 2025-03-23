@@ -7,7 +7,17 @@ Original file is located at
     https://colab.research.google.com/drive/1gJ7YS17oIEMAyIph5dITws_BFh5OnMBB
 """
 
-!pip install kaggle pymysql streamlit
+import subprocess
+import sys
+
+# Function to install packages
+def install_packages():
+    packages = ["kaggle", "pymysql", "streamlit"]
+    for package in packages:
+        subprocess.check_call([sys.executable, "-m", "pip", "install", package])
+
+install_packages()
+
 
 from google.colab import files
 files.upload()
