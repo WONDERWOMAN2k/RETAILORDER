@@ -55,8 +55,19 @@ import os
 files = os.listdir('extracted_data')
 print(files)
 
+import os
 
-!rm -f orders.csv orders.zip
+# List of files to remove
+files_to_remove = ['orders.csv', 'orders.zip']
+
+# Remove each file
+for file in files_to_remove:
+    if os.path.exists(file):
+        os.remove(file)
+        print(f"Removed {file}")
+    else:
+        print(f"{file} not found")
+
 !kaggle datasets download -d ankitbansal06/retail-orders --force
 !unzip -o retail-orders.zip -d extracted_data
 
