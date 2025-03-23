@@ -3,17 +3,19 @@ import os
 import pandas as pd
 import mysql.connector
 
-# Streamlit file uploader to upload kaggle.json file
 uploaded_file = st.file_uploader("Upload kaggle.json", type=["json"])
-
 if uploaded_file is not None:
-    # Create the .kaggle directory if it doesn't exist
-    os.makedirs(os.path.expanduser("~/.kaggle"), exist_ok=True)
-
-    # Save the uploaded file to the appropriate location
+    # Save the file temporarily
     with open(os.path.expanduser("~/.kaggle/kaggle.json"), "wb") as f:
         f.write(uploaded_file.getbuffer())
     st.success("kaggle.json uploaded successfully!")
+os.environ["SSL_CERT_PATH"] = "/path/to/ssl_certificate.pem"  # Set as environment variable
+ssl_cert_path = os.getenv("SSL_CERT_PATH")  # Retrieve it in your code
+uploaded_csv = st.file_uploader("Upload CSV", type=["csv"])
+if uploaded_csv is not None:
+    df = pd.read_csv(uploaded_csv)
+    st.write(df.head())
+
 
 # TiDB Cloud configuration
 config = {
