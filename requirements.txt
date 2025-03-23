@@ -4,4 +4,7 @@ pandas
 matplotlib
 seaborn
 numpy
+scikit-learn
+plotly
+
 Add requirements.txt for Streamlit deployment
