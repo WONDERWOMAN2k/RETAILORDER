@@ -4,3 +4,4 @@ pandas
 matplotlib
 seaborn
 numpy
+Add requirements.txt for Streamlit deployment
