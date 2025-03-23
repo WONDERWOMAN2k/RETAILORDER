@@ -3,7 +3,7 @@ import sys
 import os
 import zipfile
 import pandas as pd
-import mysql.connector
+
 from kaggle.api.kaggle_api_extended import KaggleApi
 
 # Function to install packages
@@ -80,7 +80,7 @@ print(df[["list_price", "discount_percent", "sale_price"]].head())
 
 # Install mysql-connector-python
 subprocess.check_call([sys.executable, "-m", "pip", "install", "mysql-connector-python"])
-
+import mysql.connector
 # TiDB Cloud setup
 config = {
     "host": "gateway01.us-west-2.prod.aws.tidbcloud.com",
