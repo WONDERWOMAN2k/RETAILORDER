@@ -49,8 +49,12 @@ with zipfile.ZipFile(zip_file, 'r') as zip_ref:
     zip_ref.extractall(extract_dir)
 
 
-# Check extracted files
-!ls extracted_data
+import os
+
+# List the files in the extracted_data directory
+files = os.listdir('extracted_data')
+print(files)
+
 
 !rm -f orders.csv orders.zip
 !kaggle datasets download -d ankitbansal06/retail-orders --force
