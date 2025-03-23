@@ -34,8 +34,20 @@ import os
 # Rename to .zip if needed
 os.rename("orders.csv", "orders.zip")
 
-# Extract the ZIP file
-!unzip -o orders.zip -d extracted_data
+import zipfile
+import os
+
+# Define the zip file and extraction directory
+zip_file = 'orders.zip'
+extract_dir = 'extracted_data'
+
+# Create the directory if it doesn't exist
+os.makedirs(extract_dir, exist_ok=True)
+
+# Extract the zip file
+with zipfile.ZipFile(zip_file, 'r') as zip_ref:
+    zip_ref.extractall(extract_dir)
+
 
 # Check extracted files
 !ls extracted_data
