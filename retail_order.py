@@ -1,3 +1,17 @@
+import streamlit as st
+import os
+
+uploaded_file = st.file_uploader("Upload kaggle.json", type=["json"])
+
+if uploaded_file is not None:
+    # Create the .kaggle directory if it doesn't exist
+    os.makedirs(os.path.expanduser("~/.kaggle"), exist_ok=True)
+
+    # Save the uploaded file to the appropriate location
+    with open(os.path.expanduser("~/.kaggle/kaggle.json"), "wb") as f:
+        f.write(uploaded_file.getbuffer())
+    st.success("kaggle.json uploaded successfully!")
+
 import os
 import shutil
 import pandas as pd
