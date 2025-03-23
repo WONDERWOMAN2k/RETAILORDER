@@ -67,9 +67,22 @@ for file in files_to_remove:
         print(f"Removed {file}")
     else:
         print(f"{file} not found")
+import subprocess
+subprocess.check_call([sys.executable, "-m", "pip", "install", "kaggle"])
+from kaggle.api.kaggle_api_extended import KaggleApi
+import os
 
-!kaggle datasets download -d ankitbansal06/retail-orders --force
-!unzip -o retail-orders.zip -d extracted_data
+# Authenticate with Kaggle (ensure you have the Kaggle API key stored in ~/.kaggle/kaggle.json)
+api = KaggleApi()
+api.authenticate()
+
+# Define dataset and download path
+dataset = 'ankitbansal06/retail-orders'
+download_path = './'
+
+# Download the dataset
+api.dataset_download_files(dataset, path=download_path, unzip=True)
+print(f"Dataset {dataset} downloaded and extracted to {download_path}")
 
 import pandas as pd
 
