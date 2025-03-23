@@ -1,21 +1,6 @@
 import streamlit as st
 import os
-
-uploaded_file = st.file_uploader("Upload kaggle.json", type=["json"])
-
-if uploaded_file is not None:
-    # Create the .kaggle directory if it doesn't exist
-    os.makedirs(os.path.expanduser("~/.kaggle"), exist_ok=True)
-
-    # Save the uploaded file to the appropriate location
-    with open(os.path.expanduser("~/.kaggle/kaggle.json"), "wb") as f:
-        f.write(uploaded_file.getbuffer())
-    st.success("kaggle.json uploaded successfully!")
-
-import os
-import shutil
 import pandas as pd
-import streamlit as st
 import mysql.connector
 
 # Streamlit file uploader to upload kaggle.json file
@@ -32,12 +17,12 @@ if uploaded_file is not None:
 
 # TiDB Cloud configuration
 config = {
-    "host": "gateway01.us-west-2.prod.aws.tidbcloud.com",
+     "host": "gateway01.us-west-2.prod.aws.tidbcloud.com",
     "port": 4000,
     "user": "2cG3MBTK8AjfDHM.root",  # Your username
     "password": "dYaKCArJUfrmgU85",  # Your password
     "database": "retailorder",  # Database name
-    "ssl_ca": "/path/to/isrgrootx1.pem",  # Path to the SSL certificate (adjust for your environment)
+    "ssl_ca": "/content/isrgrootx1.pem",  # Path to the SSL certificate (adjust for your environment) # Path to the SSL certificate (adjust for your environment)
     "ssl_verify_cert": True,  # Enforce certificate verification
     "ssl_disabled": False  # Ensure secure connection
 }
@@ -49,16 +34,18 @@ df.columns = df.columns.str.lower().str.replace(' ', '_')
 df.rename(columns={'order id': 'order_id', 'sale price': 'sale_price'}, inplace=True)
 df["sale_price"] = df["list_price"] * (1 - df["discount_percent"] / 100)
 
-# Print dataset columns to verify correct mapping
-print("Dataset Columns:", df.columns)
+# Display cleaned data in Streamlit
+st.write("Cleaned Data:")
+st.write(df.head())
 
 # Database interaction
 connection = None
 cursor = None
 
 try:
-    connection = mysql.connector.connect(**config)  # Create the connection
-    cursor = connection.cursor()  # Initialize the cursor
+    # Create the connection
+    connection = mysql.connector.connect(**config)
+    cursor = connection.cursor()
 
     # Create table in TiDB Cloud
     create_table_query = """
@@ -83,7 +70,7 @@ try:
     """
     cursor.execute(create_table_query)  # Execute table creation query
     connection.commit()  # Commit the transaction
-    print("✅ Orders table created successfully!")
+    st.success("✅ Orders table created successfully!")
 
     # Insert data into the database
     insert_query = """
@@ -104,29 +91,13 @@ try:
     # Check the total number of orders
     cursor.execute("SELECT COUNT(*) FROM orders;")
     result = cursor.fetchone()
-    print("Total Orders:", result[0])
+    st.write("Total Orders:", result[0])
 
 except mysql.connector.Error as err:
-    print(f"Error: {err}")
+    st.error(f"Error: {err}")
 
 finally:
     if connection and connection.is_connected():
         cursor.close()  # Close the cursor
         connection.close()  # Close the database connection
-        print("Connection closed.")
-
-# Checking cleaned data
-st.write(df.head())
-
-# Handle missing order_id
-st.write("Rows with missing or invalid order_id:")
-invalid_order_ids = df[df['order_id'].isnull()]
-st.write(invalid_order_ids)
-
-# Clean the data
-df.dropna(subset=['order_id'], inplace=True)
-df['order_id'] = pd.to_numeric(df['order_id'], errors='coerce')
-df.dropna(subset=['order_id'], inplace=True)
-st.write("Cleaned data:")
-st.write(df.head())
-
+        st.write("Connection closed.")
