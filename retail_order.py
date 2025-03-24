@@ -32,7 +32,18 @@ config = {
 }
 
 # Example to load and clean your data
-df = pd.read_csv("orders.csv", encoding="ISO-8859-1")
+import streamlit as st
+import pandas as pd
+
+# File uploader for CSV
+uploaded_file = st.file_uploader("Upload CSV", type=["csv"])
+
+if uploaded_file is not None:
+    df = pd.read_csv(uploaded_file, encoding="ISO-8859-1")  # Read uploaded file
+    st.write("Data Preview:", df.head())  # Show data preview
+else:
+    st.warning("Please upload a CSV file.")
+
 df.fillna(0, inplace=True)
 df.columns = df.columns.str.lower().str.replace(' ', '_')
 df.rename(columns={'order id': 'order_id', 'sale price': 'sale_price'}, inplace=True)
