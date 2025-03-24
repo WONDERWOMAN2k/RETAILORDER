@@ -1,6 +1,6 @@
-streamlit
-mysql-connector-python
-pandas
-matplotlib
-seaborn
-numpy
+streamlit==1.43.2
+pandas==2.2.3
+numpy==2.2.4
+matplotlib==3.10.1
+seaborn==0.13.2
+mysql-connector-python==9.2.0
