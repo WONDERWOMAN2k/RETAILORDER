@@ -39,12 +39,26 @@ if uploaded_csv is not None:
 
     st.success("✅ Orders CSV uploaded successfully!")
 
+    # ✅ Display CSV Columns for Debugging
+    st.write("🔍 **CSV Columns Detected:**", df.columns.tolist())
+
     # ✅ Data Cleaning
     df.fillna(0, inplace=True)
     df.columns = df.columns.str.lower().str.replace(' ', '_')  # Standardize column names
     df["sale_price"] = df["list_price"] * (1 - df["discount_percent"] / 100)
 
-    # Display data preview
+    # ✅ Convert data types
+    try:
+        df["order_id"] = df["order_id"].astype(int)
+        df["order_date"] = pd.to_datetime(df["order_date"], errors="coerce").dt.date  # Convert to date
+        df["list_price"] = df["list_price"].astype(float)
+        df["quantity"] = df["quantity"].astype(int)
+        df["discount_percent"] = df["discount_percent"].astype(float)
+        df["sale_price"] = df["sale_price"].astype(float)
+    except Exception as e:
+        st.error(f"❌ Data Type Conversion Error: {e}")
+
+    # ✅ Display data preview
     st.write("🔍 **Cleaned Data Preview:**")
     st.write(df.head())
 
@@ -103,22 +117,35 @@ if uploaded_csv is not None:
         if missing_columns:
             st.error(f"❌ Missing columns in CSV: {missing_columns}")
         else:
-            # ✅ Insert Data into Database (Optimized)
-            insert_query = """
-            INSERT IGNORE INTO orders (order_id, order_date, ship_mode, segment, country, city, state, postal_code, region, category, sub_category, product_id, list_price, quantity, discount_percent, sale_price)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-            """
+            # ✅ Prepare data for batch insertion
+            data_tuples = [
+                (
+                    int(row["order_id"]), row["order_date"], row["ship_mode"], row["segment"],
+                    row["country"], row["city"], row["state"], row["postal_code"], row["region"],
+                    row["category"], row["sub_category"], row["product_id"], float(row["list_price"]),
+                    int(row["quantity"]), float(row["discount_percent"]), float(row["sale_price"])
+                )
+                for _, row in df.iterrows()
+            ]
 
-            # Convert DataFrame rows to list of tuples for batch insert
-            data_tuples = [tuple(row) for _, row in df.iterrows()]
-            cursor.executemany(insert_query, data_tuples)  # ✅ Faster batch insert
-            connection.commit()
-            st.success("✅ Data inserted successfully!")
+            # ✅ Display sample row before insertion
+            if data_tuples:
+                st.write("🔍 **Sample row to insert:**", data_tuples[0])
 
-            # ✅ Fetch total number of orders
-            cursor.execute("SELECT COUNT(*) FROM orders;")
-            result = cursor.fetchone()
-            st.write(f"📊 **Total Orders in Database:** {result[0]}")
+                # ✅ Insert Data into Database (Optimized)
+                insert_query = """
+                INSERT IGNORE INTO orders (order_id, order_date, ship_mode, segment, country, city, state, postal_code, region, category, sub_category, product_id, list_price, quantity, discount_percent, sale_price)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                """
+
+                cursor.executemany(insert_query, data_tuples)  # ✅ Faster batch insert
+                connection.commit()
+                st.success(f"✅ Successfully inserted {len(data_tuples)} records!")
+
+                # ✅ Fetch total number of orders
+                cursor.execute("SELECT COUNT(*) FROM orders;")
+                result = cursor.fetchone()
+                st.write(f"📊 **Total Orders in Database:** {result[0]}")
 
     except mysql.connector.Error as err:
         st.error(f"❌ Database Error: {err}")
