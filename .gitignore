@@ -172,3 +172,10 @@ cython_debug/
 
 # PyPI configuration file
 .pypirc
+
+
+
+git add requirements.txt
+git commit -m "Fixed requirements.txt for Streamlit deployment"
+git push origin main
+
