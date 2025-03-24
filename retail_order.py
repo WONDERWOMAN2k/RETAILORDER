@@ -12,30 +12,34 @@ if uploaded_kaggle is not None:
     kaggle_path = os.path.expanduser("~/.kaggle")
     os.makedirs(kaggle_path, exist_ok=True)
     kaggle_file_path = os.path.join(kaggle_path, "kaggle.json")
-    
+
     with open(kaggle_file_path, "wb") as f:
         f.write(uploaded_kaggle.getbuffer())
 
-    st.success(f"✅ kaggle.json uploaded successfully! Saved at: `{kaggle_file_path}`")
+    st.success(f"✅ kaggle.json uploaded successfully!")
 
 # ✅ Upload SSL Certificate (.pem)
 uploaded_ssl = st.file_uploader("Upload SSL Certificate (.pem)", type=["pem"])
 ssl_cert_path = None
 if uploaded_ssl is not None:
     ssl_cert_path = os.path.join(os.getcwd(), "ssl_certificate.pem")
-    
+
     with open(ssl_cert_path, "wb") as f:
         f.write(uploaded_ssl.getbuffer())
 
-    st.success(f"✅ SSL Certificate uploaded successfully! Saved at: `{ssl_cert_path}`")
+    st.success(f"✅ SSL Certificate uploaded successfully!")
 
 # ✅ Upload Orders CSV file
 uploaded_csv = st.file_uploader("Upload Orders CSV", type=["csv"])
 if uploaded_csv is not None:
-    df = pd.read_csv(uploaded_csv, encoding="ISO-8859-1")
+    try:
+        df = pd.read_csv(uploaded_csv, encoding="ISO-8859-1")
+    except UnicodeDecodeError:
+        df = pd.read_csv(uploaded_csv, encoding="utf-8")
+
     st.success("✅ Orders CSV uploaded successfully!")
-    
-    # Data Cleaning
+
+    # ✅ Data Cleaning
     df.fillna(0, inplace=True)
     df.columns = df.columns.str.lower().str.replace(' ', '_')  # Standardize column names
     df["sale_price"] = df["list_price"] * (1 - df["discount_percent"] / 100)
@@ -51,9 +55,10 @@ if uploaded_csv is not None:
         "user": "2cG3MBTK8AjfDHM.root",
         "password": "dYaKCArJUfrmgU85",
         "database": "retailorder",
-        "ssl_ca": ssl_cert_path,  # Using uploaded SSL certificate
-        "ssl_verify_cert": True
     }
+    if ssl_cert_path:  # Use SSL if uploaded
+        config["ssl_ca"] = ssl_cert_path
+        config["ssl_verify_cert"] = True
 
     # ✅ Database connection and operations
     connection = None
@@ -87,27 +92,33 @@ if uploaded_csv is not None:
         connection.commit()
         st.success("✅ Orders table created successfully!")
 
-        # ✅ Insert Data into Database
-        insert_query = """
-        INSERT INTO orders (order_id, order_date, ship_mode, segment, country, city, state, postal_code, region, category, sub_category, product_id, list_price, quantity, discount_percent, sale_price)
-        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-        """
+        # ✅ Check if required columns exist
+        required_columns = [
+            'order_id', 'order_date', 'ship_mode', 'segment', 'country', 'city', 'state',
+            'postal_code', 'region', 'category', 'sub_category', 'product_id',
+            'list_price', 'quantity', 'discount_percent', 'sale_price'
+        ]
+        missing_columns = [col for col in required_columns if col not in df.columns]
 
-        for _, row in df.iterrows():
-            values = (
-                row['order_id'], row['order_date'], row['ship_mode'], row['segment'], row['country'],
-                row['city'], row['state'], row['postal_code'], row['region'], row['category'],
-                row['sub_category'], row['product_id'], row['list_price'], row['quantity'],
-                row['discount_percent'], row['sale_price']
-            )
-            cursor.execute(insert_query, values)
-        connection.commit()
-        st.success("✅ Data inserted successfully!")
+        if missing_columns:
+            st.error(f"❌ Missing columns in CSV: {missing_columns}")
+        else:
+            # ✅ Insert Data into Database (Optimized)
+            insert_query = """
+            INSERT IGNORE INTO orders (order_id, order_date, ship_mode, segment, country, city, state, postal_code, region, category, sub_category, product_id, list_price, quantity, discount_percent, sale_price)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            """
 
-        # ✅ Fetch total number of orders
-        cursor.execute("SELECT COUNT(*) FROM orders;")
-        result = cursor.fetchone()
-        st.write(f"📊 **Total Orders in Database:** {result[0]}")
+            # Convert DataFrame rows to list of tuples for batch insert
+            data_tuples = [tuple(row) for _, row in df.iterrows()]
+            cursor.executemany(insert_query, data_tuples)  # ✅ Faster batch insert
+            connection.commit()
+            st.success("✅ Data inserted successfully!")
+
+            # ✅ Fetch total number of orders
+            cursor.execute("SELECT COUNT(*) FROM orders;")
+            result = cursor.fetchone()
+            st.write(f"📊 **Total Orders in Database:** {result[0]}")
 
     except mysql.connector.Error as err:
         st.error(f"❌ Database Error: {err}")
